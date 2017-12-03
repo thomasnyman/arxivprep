@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+# Prepare tarball of tex document in current directory tree for arXiv
+# submission, stripping any comments.
+#
+# Usage: run arxivprep in the top-level directory containing the tex document.
+#
+# The behavior of the script can be modified by setting the value of shell
+# variables the script respects, e.g. TEXFILES=paper.tex arxivprep 
+#
+# arxivprep respects the following shell variables:
+#
+# TEXFILES: tex files to include in tarball
+# BBLFILES: bbl files to include in tarball
+# PKGFILES: cls and sty files to include in tarball
+# FIGFILES: figures to include in tarball (default: pdf, jp(e)g, png)
+# OUTFILE : name of output tarball
+# TMPDIR  : base path to temporary directory
+# STRIPTEXCOMMENT: commandline used to invoke striptexcomments script
+#
+# Author: Thomas Nyman <thomas.nyman@iki.fi>
+
+# Reliable way to get full path to script
+# http://stackoverflow.com/questions/4774054/
+readonly SCRIPTPATH=$(cd $(dirname ${BASH_SOURCE[0]}) > /dev/null; pwd -P )
+
+# User modifiable constants
+readonly TEXFILES=${TEXFILES:-$(find . -iname '*.tex')}
+readonly BBLFILES=${BBLFILES:-$(find . -iname '*.bbl')}
+readonly PKGFILES=${PKGFILES:-$(find . -iname '*.cls' -o -iname '*.sty' )}
+readonly FIGFILES=${FIGFILES:-$(find . -iname '*.pdf' -o -iname '*.jpeg' -o -iname '*.jpg' -o -iname '*.png')}
+
+readonly OUTFILE=${OUTFILE:-$(basename $PWD)_arxiv.tar.gz}
+readonly TMPDIR=${TMPDIR:-/tmp}/$(basename $0).$$
+readonly STRIPTEXCOMMENTS=${STRIPTEXCOMMENTS:-"python $SCRIPTPATH/striptexcomments --encoding utf-8"}
+
+# Error values
+readonly E_MKDIR_TMP_FAILED=251
+readonly E_CP_TO_TMP_FAILED=252
+readonly E_RM_IN_TMP_FAILED=253
+readonly E_TAR_OFILE_FAILED=254
+readonly E_STRIPTEXCOMMENTS=255
+
+# Utility functions
+error() {
+  printf >&2 '%b\n' "$(basename ${0}): ${@:2}"
+  exit ${1}
+}
+
+warning() {
+  printf >&2 '%b\n' "$(basename ${0}): ${@:1}"
+}
+
+cleanup() {
+  if [[ -d "${TMPDIR}" ]]; then
+    rm -r "${TMPDIR}" || error $E_RM_IN_TMP_FAILED "failed to remove '$TMPDIR'"
+  fi
+}
+
+# Run cleanup routine on exit
+trap cleanup EXIT
+
+# Prepare temporary directory
+if [[ ! -d "${TMPDIR}" ]]; then
+  mkdir -p "${TMPDIR}" || error $E_MKDIR_TMP_FAILED "failed to create '$TMPDIR'"
+fi
+
+# Process tex files
+for texfile in ${TEXFILES}; do
+  mkdir -p $(dirname "$TMPDIR/$texfile")
+  $($STRIPTEXCOMMENTS "$texfile" > "$TMPDIR/$texfile") || error $E_STRIPTEXCOMMENTS 'failed to strip comments from '$texfile''
+done
+
+# Check for presence of bbl file
+if [ -z "${BBLFILES}" ]; then
+  warning 'arXiv does not run BibTeX in the auto-TeXing procedure, include .bbl files if you use BibTeX' 
+fi
+
+# Copy other files to temporary directory
+for file in ${BBLFILES} ${PKGFILES} ${FIGFILES}; do
+  cp --parents "$file" "$TMPDIR/" || error $E_CP_TO_TMP_FAILED "failed to copy '$file' to '$TMPDIR'"
+done
+
+# Create tarball
+tar czvf "$OUTFILE" -C "$TMPDIR" . || error $E_TAR_OFILE_FAILED "failed to create tarball '$OUTFILE'"
+
