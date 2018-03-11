@@ -101,8 +101,8 @@ def strip_comments(source):
         r"\n"
         t.lexer.begin("INITIAL")
 
-        # Newline at the end of a line comment is presevered.
-        return t
+        # Don't preserve newline at the end of a line comment
+        pass
 
     # Ignore anything after a % on a line
     def t_linecomment_CHAR(t):
