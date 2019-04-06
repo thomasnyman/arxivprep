@@ -14,12 +14,13 @@ def strip_comments(source):
                 'PERCENT', 'BEGINCOMMENT', 'ENDCOMMENT',
                 'BACKSLASH', 'CHAR', 'BEGINVERBATIM',
                 'ENDVERBATIM', 'NEWLINE', 'ESCPCT',
-                'MAKEATLETTER', 'MAKEATOTHER',
+                'MAKEATLETTER', 'MAKEATOTHER', 'BOLPCT',
              )
     states = (
                 ('makeatblock', 'exclusive'),
                 ('makeatlinecomment', 'exclusive'),
                 ('linecomment', 'exclusive'),
+                ('midlinecomment', 'exclusive'),
                 ('commentenv', 'exclusive'),
                 ('verbatim', 'exclusive')
             )
@@ -35,10 +36,19 @@ def strip_comments(source):
         t.lexer.begin("makeatblock")
         return t
 
-    # One-line comments
-    def t_PERCENT(t):
-        r"\%"
+    # Comments from % at beginning of line to end of line
+    def t_BOLPCT(t):
+        r"(?m)^\s*\%"
+        # ply uses the re module internally. In the re module ^ is by default
+        # interpreted only at the beginning of a string and NOT at beginning of
+        # every line. The multi-line flag (?m) changes this behavior to make ^
+        # match the beginning of every line.
         t.lexer.begin("linecomment")
+
+    # Comments from % mid-line to end of line
+    def t_PERCENT(t):
+        r"(?<!^)\s*\%"
+        t.lexer.begin("midlinecomment")
 
     # Escaped percent signs
     def t_ESCPCT(t):
@@ -68,7 +78,7 @@ def strip_comments(source):
     # End comment environment
     def t_commentenv_ENDCOMMENT(t):
         r"\\end\s*{\s*comment\s*}"
-        
+
         # Anything after \end{comment} on a line is ignored!
         t.lexer.begin('linecomment')
 
@@ -104,8 +114,19 @@ def strip_comments(source):
         # Don't preserve newline at the end of a line comment
         pass
 
+    def t_midlinecomment_ENDCOMMENT(t):
+        r"\n"
+        t.lexer.begin("INITIAL")
+
+        # Preserve newline at the end of a eol comment
+        return t
+
     # Ignore anything after a % on a line
     def t_linecomment_CHAR(t):
+        r"."
+        pass
+
+    def t_midlinecomment_CHAR(t):
         r"."
         pass
 
