@@ -24,7 +24,7 @@ The behavior of the script can be modified by setting the value of shell variabl
 
 Requires Python and [ply.lex][1]:
 
-    $ pip install ply.lex
+    $ pip install ply
 
 ## Acknowledgments
 
