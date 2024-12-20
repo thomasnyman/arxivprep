@@ -27,6 +27,7 @@
 # python striptexcomments input.tex -e encoding > output.tex
 #
 import ply.lex, argparse, io
+import sys
 
 def strip_comments(source):
     tokens = (
@@ -202,7 +203,7 @@ def main():
     with io.open(args.filename, encoding=args.encoding) as f:
         source = f.read()
 
-    print(strip_comments(source).encode(args.encoding))
+    sys.stdout.buffer.write(strip_comments(source).encode(args.encoding))
 
 if __name__ == '__main__':
     main()
