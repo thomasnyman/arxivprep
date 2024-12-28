@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright 2019 Thomas Nyman <thomas.nyman@iki.fi>
 #
@@ -28,6 +28,7 @@
 #
 import ply.lex, argparse, io
 import re
+import sys
 
 def strip_comments(source):
     tokens = (
@@ -203,7 +204,7 @@ def main():
     with io.open(args.filename, encoding=args.encoding) as f:
         source = f.read()
 
-    print(strip_comments(source).encode(args.encoding))
+    sys.stdout.buffer.write(strip_comments(source).encode(args.encoding))
 
 if __name__ == '__main__':
     main()
