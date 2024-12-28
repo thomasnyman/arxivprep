@@ -36,6 +36,7 @@ def strip_comments(source):
                 'BACKSLASH', 'CHAR', 'BEGINVERBATIM',
                 'ENDVERBATIM', 'NEWLINE', 'ESCPCT',
                 'MAKEATLETTER', 'MAKEATOTHER', 'BOLPCT',
+                'BEGINGROUP', 'ENDGROUP',
              )
     states = (
                 ('makeatblock', 'exclusive'),
@@ -43,7 +44,9 @@ def strip_comments(source):
                 ('linecomment', 'exclusive'),
                 ('midlinecomment', 'exclusive'),
                 ('commentenv', 'exclusive'),
-                ('verbatim', 'exclusive')
+                ('verbatim', 'exclusive'),
+                ('group', 'exclusive'),
+                ('grouplinecomment', 'exclusive')
             )
 
     # Deal with escaped backslashes, so we don't think they're escaping %
@@ -55,6 +58,13 @@ def strip_comments(source):
     def t_MAKEATLETTER(t):
         r"\\makeatletter"
         t.lexer.begin("makeatblock")
+        return t
+
+    # Leaving all % in \begingroup..\endgroup
+    def t_BEGINGROUP(t):
+        r"\\begingroup"
+        t.lexer.group_depth += 1
+        t.lexer.begin("group")
         return t
 
     # Comments from % at beginning of line to end of line
@@ -181,6 +191,48 @@ def strip_comments(source):
         r"\n"
         return t
 
+    def t_group_BEGINGROUP(t):
+        r"\\begingroup"
+        t.lexer.group_depth += 1
+        t.lexer.begin("group")
+        return t
+
+    def t_group_ENDGROUP(t):
+        r"\\endgroup"
+        t.lexer.group_depth -= 1
+        if t.lexer.group_depth == 0:
+            t.lexer.begin('INITIAL')
+        return t
+
+    def t_group_BACKSLASH(t):
+        r"\\\\"
+        return t
+
+    # Escaped percent signs in group
+    def t_group_ESCPCT(t):
+        r"\\\%"
+        return t
+
+    # Preserve % in group
+    def t_group_PERCENT(t):
+        r"\%"
+        t.lexer.begin("grouplinecomment")
+        return t
+
+    def t_grouplinecomment_NEWLINE(t):
+        r"\n"
+        t.lexer.begin('group')
+        return t
+
+    # Leave contents of group alone
+    def t_group_CHAR(t):
+        r"."
+        return t
+
+    def t_group_NEWLINE(t):
+        r"\n"
+        return t
+
     # For bad characters, we just skip over it
     def t_ANY_error(t):
         t.lexer.skip(1)
@@ -190,6 +242,7 @@ def strip_comments(source):
     # every line. The MULTILINE flag changes this behavior to make ^ match
     # the beginning of every line.
     lexer = ply.lex.lex(reflags=re.VERBOSE | re.MULTILINE)
+    lexer.group_depth = 0
     lexer.input(source)
     return u"".join([tok.value for tok in lexer])
 
