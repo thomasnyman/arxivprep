@@ -177,7 +177,8 @@ main() {
 
   # Copy other files to temporary directory
   for file in ${bblfiles[@]} ${pkgfiles[@]} ${figfiles[@]}; do
-    cp --parents "$file" "$TARDIR/" || error $E_CP_FAILED "failed to copy '$file' to '$TARDIR'"
+    mkdir -p "$(dirname "${TARDIR}/${file}")" || error $E_MKDIR_FAILED "failed to create '$(dirname "${TARDIR}/${file}")'"
+    cp "${file}" "${TARDIR}/${file}" || error $E_CP_FAILED "failed to copy '${file}' to '${TARDIR}/${file}'"
   done
 
   # Create tarball
