@@ -55,7 +55,7 @@ detected document dependencies.
 
 ## Dependencies
 
-Requires Python and [ply.lex][1]:
+Requires Python 3 and [ply.lex][1]:
 
     $ pip install ply
 
@@ -64,6 +64,10 @@ Requires Python and [ply.lex][1]:
 `striptexcomments` based on [`strip_comments.py` script by Adam Merberger][2]
 
 `strip_comments.py` modifications that preserve comments in `\makeatletter` and `\makeatother` blocks by [dzhuan][3]
+
+### Additional contributors
+
+- Hugo Depuydt
 
 ## License
 
