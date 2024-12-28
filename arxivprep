@@ -154,7 +154,7 @@ main() {
       -o -iname '*.cls' \
       -o -iname '*.sty' \
       -o -iname '*.pdf' \
-      -o -iname '*.jpeg'\ 
+      -o -iname '*.jpeg'\
       -o -iname '*.jpg' \
       -o -iname '*.png')}
   fi
