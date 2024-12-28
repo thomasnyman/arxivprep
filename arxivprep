@@ -73,14 +73,14 @@ set -e
 
 # Reliable way to get full path to script
 # http://stackoverflow.com/questions/4774054/
-readonly SCRIPTPATH=$(cd $(dirname ${BASH_SOURCE[0]}) > /dev/null; pwd -P )
+readonly SCRIPTPATH=$(cd $(dirname "${BASH_SOURCE[0]}") > /dev/null; pwd -P )
 
 # User modifiable constants
 readonly TYPESETTER=${TYPESETTER:-"pdflatex"}
 readonly LATEXFLAGS=${LATEXFLAGS:--halt-on-error -interaction=batchmode -draftmode}
 
-readonly OUTFILE=${OUTFILE:-$(basename ${PWD})_arxiv.tar.gz}
-readonly TMPDIR=${TMPDIR:-/tmp}/$(basename ${0}).$$
+readonly OUTFILE=${OUTFILE:-$(basename "${PWD}")_arxiv.tar.gz}
+readonly TMPDIR=${TMPDIR:-/tmp}/$(basename "${0}").$$
 readonly AUXDIR=${AUXDIR:-"${TMPDIR}/aux"}
 readonly TARDIR=${TARDIR:-"${TMPDIR}/tar"}
 
@@ -165,9 +165,9 @@ main() {
   local -r figfiles=(${FIGFILES:-$(printf -- '%s\n' "${inputs[@]}" | grep -E "\.pdf$|\.jpeg$|\.jpg$|\.png$")})
 
   # Process tex files
-  for texfile in ${texfiles[@]}; do
-    mkdir -p $(dirname "${TARDIR}/${texfile}") || error ${E_MKDIR_FAILED} "failed to create '$(dirname "${TARDIR}/${texfile}")'"
-    ${STRIPTEXCOMMENTS} "${texfile}" > "${TARDIR}/${texfile}" || error ${E_STRIPTEXCOMMENTS} 'failed to strip comments from '${texfile}''
+  for texfile in "${texfiles[@]}"; do
+    mkdir -p "$(dirname "${TARDIR}/${texfile}")" || error ${E_MKDIR_FAILED} "failed to create '$(dirname "${TARDIR}/${texfile}")'"
+    ${STRIPTEXCOMMENTS} "${texfile}" > "${TARDIR}/${texfile}" || error ${E_STRIPTEXCOMMENTS} "failed to strip comments from '${texfile}'"
   done
 
   # Check for presence of bbl file
@@ -176,7 +176,7 @@ main() {
   fi
 
   # Copy other files to temporary directory
-  for file in ${bblfiles[@]} ${pkgfiles[@]} ${figfiles[@]}; do
+  for file in "${bblfiles[@]}" "${pkgfiles[@]}" "${figfiles[@]}"; do
     mkdir -p "$(dirname "${TARDIR}/${file}")" || error ${E_MKDIR_FAILED} "failed to create '$(dirname "${TARDIR}/${file}")'"
     cp "${file}" "${TARDIR}/${file}" || error ${E_CP_FAILED} "failed to copy '${file}' to '${TARDIR}/${file}'"
   done
