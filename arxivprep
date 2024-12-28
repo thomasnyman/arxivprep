@@ -144,7 +144,7 @@ main() {
     fi
     
     # Extract unique INPUT files in the current directory subtree
-    local -r inputs=(${INPUTS:-$(sed -n -e '/^INPUT [!/]/! s/^INPUT \([.]\/\|\)\(.*\)/\2/p' "${AUXDIR}/${texname}.fls" <(echo "${bblinput}") | sort | uniq)})
+    local -r inputs=(${INPUTS:-$(awk '/^INPUT / && !/^INPUT [!\/]/ { sub(/^INPUT (\.\/)?/, ""); print }' "${AUXDIR}/${texname}.fls" <(echo "${bblinput}") | sort | uniq)})
     
   else  # Typesetter is not available
     warning "${TYPESETTER} not found; using pattern matching to identify input files"
