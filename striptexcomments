@@ -27,6 +27,7 @@
 # python striptexcomments input.tex -e encoding > output.tex
 #
 import ply.lex, argparse, io
+import re
 import sys
 
 def strip_comments(source):
@@ -58,11 +59,7 @@ def strip_comments(source):
 
     # Comments from % at beginning of line to end of line
     def t_BOLPCT(t):
-        r"(?m)^\s*\%"
-        # ply uses the re module internally. In the re module ^ is by default
-        # interpreted only at the beginning of a string and NOT at beginning of
-        # every line. The multi-line flag (?m) changes this behavior to make ^
-        # match the beginning of every line.
+        r"^\s*\%"
         t.lexer.begin("linecomment")
 
     # Comments from % mid-line to end of line
@@ -188,7 +185,11 @@ def strip_comments(source):
     def t_ANY_error(t):
         t.lexer.skip(1)
 
-    lexer = ply.lex.lex()
+    # ply uses the re module internally. In the re module ^ is by default
+    # interpreted only at the beginning of a string and NOT at beginning of
+    # every line. The MULTILINE flag changes this behavior to make ^ match
+    # the beginning of every line.
+    lexer = ply.lex.lex(reflags=re.VERBOSE | re.MULTILINE)
     lexer.input(source)
     return u"".join([tok.value for tok in lexer])
 
